@@ -1,8 +1,10 @@
 package envcontract
 
 type FieldContract struct {
-	Name     string
-	EnvKey   string
-	Required bool
-	Kind     string
+	Name       string
+	EnvKey     string
+	Required   bool
+	HasDefault bool
+	Default    string
+	Kind       string
 }

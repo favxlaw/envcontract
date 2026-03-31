@@ -60,8 +60,18 @@ func parseStruct(rv reflect.Value) ([]envcontract.FieldContract, error) {
 
 		parts := strings.Split(tag, ",")
 		envKey := parts[0]
-		required := len(parts) > 1 && parts[1] == "required"
+		var required bool
+		var hasDefault bool
+		var defaultVal string
 
+		for _, opt := range parts[1:] {
+			if opt == "required" {
+				required = true
+			} else if strings.HasPrefix(opt, "default=") {
+				hasDefault = true
+				defaultVal = strings.TrimPrefix(opt, "default=")
+			}
+		}
 		kind := fieldVal.Kind()
 		if kind == reflect.Struct {
 			nested, err := parseStruct(fieldVal)
@@ -85,11 +95,14 @@ func parseStruct(rv reflect.Value) ([]envcontract.FieldContract, error) {
 		}
 
 		contracts = append(contracts, envcontract.FieldContract{
-			Name:     field.Name,
-			EnvKey:   envKey,
-			Required: required,
-			Kind:     kindStr,
+			Name:       field.Name,
+			EnvKey:     envKey,
+			Required:   required,
+			HasDefault: hasDefault,
+			Default:    defaultVal,
+			Kind:       kindStr,
 		})
+
 	}
 
 	return contracts, nil
