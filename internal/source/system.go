@@ -7,15 +7,19 @@ import (
 
 type SystemSource struct{}
 
-func (s *SystemSource) Load() (map[string]string, error) {
-	result := make(map[string]string)
+// If duplicate keys somehow appear, the last value wins.
+func (SystemSource) Load() (LoadResult, error) {
+	result := LoadResult{
+		Values: make(map[string]string),
+	}
 
 	for _, entry := range os.Environ() {
-		parts := strings.SplitN(entry, "=", 2)
-		if len(parts) != 2 {
+		key, value, ok := strings.Cut(entry, "=")
+		if !ok {
 			continue
 		}
-		result[parts[0]] = parts[1]
+
+		result.Values[key] = value
 	}
 
 	return result, nil
