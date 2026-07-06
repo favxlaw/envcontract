@@ -13,99 +13,129 @@ func ParseStruct(v any) ([]envcontract.FieldContract, error) {
 		return nil, fmt.Errorf("envcontract: input must be a non-nil pointer to a struct")
 	}
 
-	rv := reflect.ValueOf(v)
-	if rv.Kind() != reflect.Ptr {
-		return nil, fmt.Errorf("envcontract: input must be a pointer to a struct, got %s", rv.Kind())
+	rt := reflect.TypeOf(v)
+	if rt.Kind() != reflect.Ptr {
+		return nil, fmt.Errorf("envcontract: input must be a pointer to a struct, got %s", rt.Kind())
 	}
+
+	if rt.Elem().Kind() != reflect.Struct {
+		return nil, fmt.Errorf("envcontract: input must be a pointer to a struct, got pointer to %s", rt.Elem().Kind())
+	}
+
+	rv := reflect.ValueOf(v)
 	if rv.IsNil() {
 		return nil, fmt.Errorf("envcontract: input must be a non-nil pointer to a struct")
 	}
 
-	rv = rv.Elem()
-	if rv.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("envcontract: input must be a pointer to a struct, got pointer to %s", rv.Kind())
-	}
-
-	return parseStruct(rv)
+	return parseStructType(rt.Elem())
 }
 
-func parseStruct(rv reflect.Value) ([]envcontract.FieldContract, error) {
-	rt := rv.Type()
+func parseStructType(rt reflect.Type) ([]envcontract.FieldContract, error) {
 	var contracts []envcontract.FieldContract
 
-	for i := range rt.NumField() {
+	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
-		fieldVal := rv.Field(i)
 
-		tag, ok := field.Tag.Lookup("env")
-		if !ok {
-			kind := fieldVal.Kind()
-			if kind == reflect.Struct {
-				nested, err := parseStruct(fieldVal)
-				if err != nil {
-					return nil, err
-				}
-				contracts = append(contracts, nested...)
-				continue
-			}
-			if kind == reflect.Ptr && !fieldVal.IsNil() && fieldVal.Elem().Kind() == reflect.Struct {
-				nested, err := parseStruct(fieldVal.Elem())
-				if err != nil {
-					return nil, err
-				}
-				contracts = append(contracts, nested...)
-			}
+		if field.PkgPath != "" {
 			continue
 		}
 
-		parts := strings.Split(tag, ",")
-		envKey := parts[0]
-		var required bool
-		var hasDefault bool
-		var defaultVal string
-
-		for _, opt := range parts[1:] {
-			if opt == "required" {
-				required = true
-			} else if strings.HasPrefix(opt, "default=") {
-				hasDefault = true
-				defaultVal = strings.TrimPrefix(opt, "default=")
-			}
+		tag, hasTag := field.Tag.Lookup("env")
+		if hasTag && tag == "-" {
+			continue
 		}
-		kind := fieldVal.Kind()
-		if kind == reflect.Struct {
-			nested, err := parseStruct(fieldVal)
+
+		fieldType := field.Type
+		fieldKind := fieldType.Kind()
+
+		if fieldKind == reflect.Ptr {
+			fieldType = fieldType.Elem()
+			fieldKind = fieldType.Kind()
+		}
+
+		if fieldKind == reflect.Struct && !hasTag {
+			nested, err := parseStructType(fieldType)
 			if err != nil {
 				return nil, err
 			}
 			contracts = append(contracts, nested...)
 			continue
 		}
-		if kind == reflect.Ptr {
-			if fieldVal.IsNil() {
-				continue
-			}
-			fieldVal = fieldVal.Elem()
-			kind = fieldVal.Kind()
+
+		if !hasTag {
+			continue
 		}
 
-		kindStr, ok := supportedKind(kind)
+		envTag, err := parseEnvTag(tag)
+		if err != nil {
+			return nil, fmt.Errorf("field %s: %w", field.Name, err)
+		}
+
+		if envTag.key == "" {
+			continue
+		}
+
+		if fieldKind == reflect.Struct {
+			nested, err := parseStructType(fieldType)
+			if err != nil {
+				return nil, err
+			}
+			contracts = append(contracts, nested...)
+			continue
+		}
+
+		kind, ok := supportedKind(fieldKind)
 		if !ok {
 			continue
 		}
 
 		contracts = append(contracts, envcontract.FieldContract{
 			Name:       field.Name,
-			EnvKey:     envKey,
-			Required:   required,
-			HasDefault: hasDefault,
-			Default:    defaultVal,
-			Kind:       kindStr,
+			EnvKey:     envTag.key,
+			Required:   envTag.required,
+			HasDefault: envTag.hasDefault,
+			Default:    envTag.defaultValue,
+			Kind:       kind,
 		})
-
 	}
 
 	return contracts, nil
+}
+
+type envTag struct {
+	key          string
+	required     bool
+	hasDefault   bool
+	defaultValue string
+}
+
+func parseEnvTag(tag string) (envTag, error) {
+	parts := strings.Split(tag, ",")
+	if len(parts) == 0 {
+		return envTag{}, nil
+	}
+
+	parsed := envTag{
+		key: strings.TrimSpace(parts[0]),
+	}
+
+	for _, rawOpt := range parts[1:] {
+		opt := strings.TrimSpace(rawOpt)
+
+		switch {
+		case opt == "":
+			continue
+		case opt == "required":
+			parsed.required = true
+		case strings.HasPrefix(opt, "default="):
+			parsed.hasDefault = true
+			parsed.defaultValue = strings.TrimPrefix(opt, "default=")
+		default:
+			return envTag{}, fmt.Errorf("unknown env tag option %q", opt)
+		}
+	}
+
+	return parsed, nil
 }
 
 func supportedKind(k reflect.Kind) (string, bool) {
@@ -120,6 +150,7 @@ func supportedKind(k reflect.Kind) (string, bool) {
 		return "float64", true
 	case reflect.Bool:
 		return "bool", true
+	default:
+		return "", false
 	}
-	return "", false
 }

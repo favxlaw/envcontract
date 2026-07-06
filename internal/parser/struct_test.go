@@ -19,6 +19,11 @@ func TestParseStruct(t *testing.T) {
 		B  bool    `env:"B"`
 	}
 
+	type PointerScalars struct {
+		Host *string `env:"HOST"`
+		Port *int    `env:"PORT,required"`
+	}
+
 	type Inner struct {
 		Port int `env:"PORT"`
 	}
@@ -44,6 +49,11 @@ func TestParseStruct(t *testing.T) {
 		Host string `env:"HOST,default=localhost"`
 	}
 
+	type WithSkipTag struct {
+		Host   string `env:"HOST"`
+		Secret string `env:"-"`
+	}
+
 	tests := []struct {
 		name      string
 		input     any
@@ -59,6 +69,11 @@ func TestParseStruct(t *testing.T) {
 		{
 			name:    "non-pointer input returns error",
 			input:   Simple{},
+			wantErr: true,
+		},
+		{
+			name:    "nil pointer returns error",
+			input:   (*Simple)(nil),
 			wantErr: true,
 		},
 		{
@@ -79,6 +94,16 @@ func TestParseStruct(t *testing.T) {
 		{
 			name:    "untagged field is skipped",
 			input:   &WithUntagged{},
+			wantLen: 1,
+			wantFirst: &envcontract.FieldContract{
+				Name:   "Host",
+				EnvKey: "HOST",
+				Kind:   "string",
+			},
+		},
+		{
+			name:    "skip tag is skipped",
+			input:   &WithSkipTag{},
 			wantLen: 1,
 			wantFirst: &envcontract.FieldContract{
 				Name:   "Host",
@@ -115,6 +140,16 @@ func TestParseStruct(t *testing.T) {
 			wantLen: 5,
 		},
 		{
+			name:    "nil pointer scalar fields are still parsed",
+			input:   &PointerScalars{},
+			wantLen: 2,
+			wantFirst: &envcontract.FieldContract{
+				Name:   "Host",
+				EnvKey: "HOST",
+				Kind:   "string",
+			},
+		},
+		{
 			name:    "nested struct fields are flattened",
 			input:   &WithNested{},
 			wantLen: 1,
@@ -125,7 +160,17 @@ func TestParseStruct(t *testing.T) {
 			},
 		},
 		{
-			name:    "pointer to struct field is dereferenced",
+			name:    "nil pointer to nested struct is still parsed",
+			input:   &WithPtrNested{},
+			wantLen: 1,
+			wantFirst: &envcontract.FieldContract{
+				Name:   "Port",
+				EnvKey: "PORT",
+				Kind:   "int",
+			},
+		},
+		{
+			name:    "pointer to nested struct is parsed",
 			input:   &WithPtrNested{Inner: &Inner{}},
 			wantLen: 1,
 			wantFirst: &envcontract.FieldContract{
@@ -152,15 +197,23 @@ func TestParseStruct(t *testing.T) {
 			}
 
 			if len(got) != tt.wantLen {
-				t.Fatalf("expected %d contracts, got %d", tt.wantLen, len(got))
+				t.Fatalf("expected %d contracts, got %d: %+v", tt.wantLen, len(got), got)
 			}
 
-			if tt.wantFirst != nil {
-				c := got[0]
-				if c != *tt.wantFirst {
-					t.Errorf("first contract mismatch\ngot:  %+v\nwant: %+v", c, *tt.wantFirst)
-				}
+			if tt.wantFirst != nil && got[0] != *tt.wantFirst {
+				t.Errorf("first contract mismatch\ngot:  %+v\nwant: %+v", got[0], *tt.wantFirst)
 			}
 		})
+	}
+}
+
+func TestParseStructUnknownTagOption(t *testing.T) {
+	type Config struct {
+		Host string `env:"HOST,banana"`
+	}
+
+	_, err := ParseStruct(&Config{})
+	if err == nil {
+		t.Fatal("expected error, got nil")
 	}
 }
