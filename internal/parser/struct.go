@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
-	"github.com/favxlaw/envcontract"
+	"github.com/favxlaw/envcontract/internal/contract"
 )
 
-func ParseStruct(v any) ([]envcontract.FieldContract, error) {
+func ParseStruct(v any) ([]contract.FieldContract, error) {
 	if v == nil {
 		return nil, fmt.Errorf("envcontract: input must be a non-nil pointer to a struct")
 	}
@@ -30,8 +31,8 @@ func ParseStruct(v any) ([]envcontract.FieldContract, error) {
 	return parseStructType(rt.Elem())
 }
 
-func parseStructType(rt reflect.Type) ([]envcontract.FieldContract, error) {
-	var contracts []envcontract.FieldContract
+func parseStructType(rt reflect.Type) ([]contract.FieldContract, error) {
+	var contracts []contract.FieldContract
 
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
@@ -84,12 +85,12 @@ func parseStructType(rt reflect.Type) ([]envcontract.FieldContract, error) {
 			continue
 		}
 
-		kind, ok := supportedKind(fieldKind)
+		kind, ok := supportedType(fieldType)
 		if !ok {
 			continue
 		}
 
-		contracts = append(contracts, envcontract.FieldContract{
+		contracts = append(contracts, contract.FieldContract{
 			Name:       field.Name,
 			EnvKey:     envTag.key,
 			Required:   envTag.required,
@@ -138,8 +139,14 @@ func parseEnvTag(tag string) (envTag, error) {
 	return parsed, nil
 }
 
-func supportedKind(k reflect.Kind) (string, bool) {
-	switch k {
+var durationType = reflect.TypeOf(time.Duration(0))
+
+func supportedType(t reflect.Type) (string, bool) {
+	if t == durationType {
+		return "duration", true
+	}
+
+	switch t.Kind() {
 	case reflect.String:
 		return "string", true
 	case reflect.Int:

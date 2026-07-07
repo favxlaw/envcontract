@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/favxlaw/envcontract"
+	"github.com/favxlaw/envcontract/internal/contract"
 )
 
 func TestParseStruct(t *testing.T) {
@@ -59,7 +59,7 @@ func TestParseStruct(t *testing.T) {
 		input     any
 		wantErr   bool
 		wantLen   int
-		wantFirst *envcontract.FieldContract
+		wantFirst *contract.FieldContract
 	}{
 		{
 			name:    "nil input returns error",
@@ -85,7 +85,7 @@ func TestParseStruct(t *testing.T) {
 			name:    "valid struct with one tagged field",
 			input:   &Simple{},
 			wantLen: 1,
-			wantFirst: &envcontract.FieldContract{
+			wantFirst: &contract.FieldContract{
 				Name:   "Host",
 				EnvKey: "HOST",
 				Kind:   "string",
@@ -95,7 +95,7 @@ func TestParseStruct(t *testing.T) {
 			name:    "untagged field is skipped",
 			input:   &WithUntagged{},
 			wantLen: 1,
-			wantFirst: &envcontract.FieldContract{
+			wantFirst: &contract.FieldContract{
 				Name:   "Host",
 				EnvKey: "HOST",
 				Kind:   "string",
@@ -105,7 +105,7 @@ func TestParseStruct(t *testing.T) {
 			name:    "skip tag is skipped",
 			input:   &WithSkipTag{},
 			wantLen: 1,
-			wantFirst: &envcontract.FieldContract{
+			wantFirst: &contract.FieldContract{
 				Name:   "Host",
 				EnvKey: "HOST",
 				Kind:   "string",
@@ -115,7 +115,7 @@ func TestParseStruct(t *testing.T) {
 			name:    "required tag sets Required true",
 			input:   &WithRequired{},
 			wantLen: 1,
-			wantFirst: &envcontract.FieldContract{
+			wantFirst: &contract.FieldContract{
 				Name:     "Host",
 				EnvKey:   "HOST",
 				Required: true,
@@ -126,7 +126,7 @@ func TestParseStruct(t *testing.T) {
 			name:    "default tag sets HasDefault and Default",
 			input:   &WithDefault{},
 			wantLen: 1,
-			wantFirst: &envcontract.FieldContract{
+			wantFirst: &contract.FieldContract{
 				Name:       "Host",
 				EnvKey:     "HOST",
 				HasDefault: true,
@@ -143,7 +143,7 @@ func TestParseStruct(t *testing.T) {
 			name:    "nil pointer scalar fields are still parsed",
 			input:   &PointerScalars{},
 			wantLen: 2,
-			wantFirst: &envcontract.FieldContract{
+			wantFirst: &contract.FieldContract{
 				Name:   "Host",
 				EnvKey: "HOST",
 				Kind:   "string",
@@ -153,7 +153,7 @@ func TestParseStruct(t *testing.T) {
 			name:    "nested struct fields are flattened",
 			input:   &WithNested{},
 			wantLen: 1,
-			wantFirst: &envcontract.FieldContract{
+			wantFirst: &contract.FieldContract{
 				Name:   "Port",
 				EnvKey: "PORT",
 				Kind:   "int",
@@ -163,7 +163,7 @@ func TestParseStruct(t *testing.T) {
 			name:    "nil pointer to nested struct is still parsed",
 			input:   &WithPtrNested{},
 			wantLen: 1,
-			wantFirst: &envcontract.FieldContract{
+			wantFirst: &contract.FieldContract{
 				Name:   "Port",
 				EnvKey: "PORT",
 				Kind:   "int",
@@ -173,7 +173,7 @@ func TestParseStruct(t *testing.T) {
 			name:    "pointer to nested struct is parsed",
 			input:   &WithPtrNested{Inner: &Inner{}},
 			wantLen: 1,
-			wantFirst: &envcontract.FieldContract{
+			wantFirst: &contract.FieldContract{
 				Name:   "Port",
 				EnvKey: "PORT",
 				Kind:   "int",

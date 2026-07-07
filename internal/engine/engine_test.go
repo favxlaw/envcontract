@@ -3,20 +3,20 @@ package engine
 import (
 	"testing"
 
-	"github.com/favxlaw/envcontract"
+	"github.com/favxlaw/envcontract/internal/contract"
 )
 
 func TestCheckMissing(t *testing.T) {
 	tests := []struct {
 		name      string
-		contracts []envcontract.FieldContract
+		contracts []contract.FieldContract
 		env       map[string]string
 		wantLen   int
 		wantError []bool // IsError for each expected finding, in order
 	}{
 		{
 			name: "present key produces no finding",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Required: true, Kind: "string"},
 			},
 			env:     map[string]string{"HOST": "localhost"},
@@ -24,7 +24,7 @@ func TestCheckMissing(t *testing.T) {
 		},
 		{
 			name: "empty string counts as present",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Required: true, Kind: "string"},
 			},
 			env:     map[string]string{"HOST": ""},
@@ -32,7 +32,7 @@ func TestCheckMissing(t *testing.T) {
 		},
 		{
 			name: "missing required with no default is error",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "DB_URL", Required: true, Kind: "string"},
 			},
 			env:       map[string]string{},
@@ -41,7 +41,7 @@ func TestCheckMissing(t *testing.T) {
 		},
 		{
 			name: "missing optional with no default is warning",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "DEBUG", Required: false, Kind: "bool"},
 			},
 			env:       map[string]string{},
@@ -50,7 +50,7 @@ func TestCheckMissing(t *testing.T) {
 		},
 		{
 			name: "missing key with default produces no finding",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "PORT", Required: true, HasDefault: true, Default: "8080", Kind: "int"},
 			},
 			env:     map[string]string{},
@@ -58,7 +58,7 @@ func TestCheckMissing(t *testing.T) {
 		},
 		{
 			name: "multiple contracts mixed",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "A", Required: true, Kind: "string"},
 				{EnvKey: "B", Required: false, Kind: "string"},
 				{EnvKey: "C", Required: true, HasDefault: true, Default: "x", Kind: "string"},
@@ -79,7 +79,7 @@ func TestCheckMissing(t *testing.T) {
 				if got[i].IsError != wantErr {
 					t.Errorf("finding[%d].IsError = %v, want %v", i, got[i].IsError, wantErr)
 				}
-				if got[i].Kind != envcontract.KindMissing {
+				if got[i].Kind != contract.KindMissing {
 					t.Errorf("finding[%d].Kind = %v, want KindMissing", i, got[i].Kind)
 				}
 			}
@@ -90,13 +90,13 @@ func TestCheckMissing(t *testing.T) {
 func TestCheckTypes(t *testing.T) {
 	tests := []struct {
 		name    string
-		contracts []envcontract.FieldContract
+		contracts []contract.FieldContract
 		env     map[string]string
 		wantLen int
 	}{
 		{
 			name: "valid string always passes",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Kind: "string"},
 			},
 			env:     map[string]string{"HOST": "anything"},
@@ -104,7 +104,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "valid int passes",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "PORT", Kind: "int"},
 			},
 			env:     map[string]string{"PORT": "8080"},
@@ -112,7 +112,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "invalid int is error",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "PORT", Kind: "int"},
 			},
 			env:     map[string]string{"PORT": "abc"},
@@ -120,7 +120,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "valid int64 passes",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "BIG", Kind: "int64"},
 			},
 			env:     map[string]string{"BIG": "9999999999"},
@@ -128,7 +128,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "invalid int64 is error",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "BIG", Kind: "int64"},
 			},
 			env:     map[string]string{"BIG": "not_a_number"},
@@ -136,7 +136,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "valid float64 passes",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "RATE", Kind: "float64"},
 			},
 			env:     map[string]string{"RATE": "3.14"},
@@ -144,7 +144,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "invalid float64 is error",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "RATE", Kind: "float64"},
 			},
 			env:     map[string]string{"RATE": "abc"},
@@ -152,7 +152,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "valid bool passes (true)",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "DEBUG", Kind: "bool"},
 			},
 			env:     map[string]string{"DEBUG": "true"},
@@ -160,7 +160,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "valid bool passes (0)",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "DEBUG", Kind: "bool"},
 			},
 			env:     map[string]string{"DEBUG": "0"},
@@ -168,7 +168,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "invalid bool is error",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "DEBUG", Kind: "bool"},
 			},
 			env:     map[string]string{"DEBUG": "yes"},
@@ -176,7 +176,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "missing key is skipped (not a type error)",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "MISSING", Kind: "int"},
 			},
 			env:     map[string]string{},
@@ -184,7 +184,7 @@ func TestCheckTypes(t *testing.T) {
 		},
 		{
 			name: "empty string for int is type error",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "PORT", Kind: "int"},
 			},
 			env:     map[string]string{"PORT": ""},
@@ -199,7 +199,7 @@ func TestCheckTypes(t *testing.T) {
 				t.Fatalf("expected %d findings, got %d: %+v", tt.wantLen, len(got), got)
 			}
 			for _, f := range got {
-				if f.Kind != envcontract.KindTypeMismatch {
+				if f.Kind != contract.KindTypeMismatch {
 					t.Errorf("expected KindTypeMismatch, got %v", f.Kind)
 				}
 				if !f.IsError {
@@ -213,14 +213,14 @@ func TestCheckTypes(t *testing.T) {
 func TestCheckUnused(t *testing.T) {
 	tests := []struct {
 		name      string
-		contracts []envcontract.FieldContract
+		contracts []contract.FieldContract
 		env       map[string]string
 		wantLen   int
 		wantKeys  []string
 	}{
 		{
 			name: "no unused vars",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Kind: "string"},
 			},
 			env:     map[string]string{"HOST": "localhost"},
@@ -228,7 +228,7 @@ func TestCheckUnused(t *testing.T) {
 		},
 		{
 			name: "one unused var",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Kind: "string"},
 			},
 			env:      map[string]string{"HOST": "localhost", "STALE_KEY": "leftover"},
@@ -237,13 +237,13 @@ func TestCheckUnused(t *testing.T) {
 		},
 		{
 			name:      "all unused when no contracts",
-			contracts: []envcontract.FieldContract{},
+			contracts: []contract.FieldContract{},
 			env:       map[string]string{"A": "1", "B": "2"},
 			wantLen:   2,
 		},
 		{
 			name: "empty env produces no findings",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Kind: "string"},
 			},
 			env:     map[string]string{},
@@ -258,7 +258,7 @@ func TestCheckUnused(t *testing.T) {
 				t.Fatalf("expected %d findings, got %d: %+v", tt.wantLen, len(got), got)
 			}
 			for _, f := range got {
-				if f.Kind != envcontract.KindUnused {
+				if f.Kind != contract.KindUnused {
 					t.Errorf("expected KindUnused, got %v", f.Kind)
 				}
 				if f.IsError {
@@ -277,14 +277,14 @@ func TestCheckUnused(t *testing.T) {
 func TestRunIntegration(t *testing.T) {
 	tests := []struct {
 		name      string
-		contracts []envcontract.FieldContract
+		contracts []contract.FieldContract
 		env       map[string]string
 		opts      Options
 		wantLen   int
 	}{
 		{
 			name: "all good — no findings",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Required: true, Kind: "string"},
 				{EnvKey: "PORT", Required: true, Kind: "int"},
 			},
@@ -293,7 +293,7 @@ func TestRunIntegration(t *testing.T) {
 		},
 		{
 			name: "missing + type error combined",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Required: true, Kind: "string"},
 				{EnvKey: "PORT", Required: true, Kind: "int"},
 			},
@@ -302,7 +302,7 @@ func TestRunIntegration(t *testing.T) {
 		},
 		{
 			name: "unused check disabled by default",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Required: true, Kind: "string"},
 			},
 			env:     map[string]string{"HOST": "localhost", "EXTRA": "ignored"},
@@ -311,7 +311,7 @@ func TestRunIntegration(t *testing.T) {
 		},
 		{
 			name: "unused check enabled",
-			contracts: []envcontract.FieldContract{
+			contracts: []contract.FieldContract{
 				{EnvKey: "HOST", Required: true, Kind: "string"},
 			},
 			env:     map[string]string{"HOST": "localhost", "EXTRA": "found"},
@@ -325,6 +325,63 @@ func TestRunIntegration(t *testing.T) {
 			got := Run(tt.contracts, tt.env, tt.opts)
 			if len(got) != tt.wantLen {
 				t.Fatalf("expected %d findings, got %d: %+v", tt.wantLen, len(got), got)
+			}
+		})
+	}
+}
+
+
+func TestCheckDefaults(t *testing.T) {
+	tests := []struct {
+		name      string
+		contracts []contract.FieldContract
+		wantLen   int
+	}{
+		{
+			name: "valid default passes",
+			contracts: []contract.FieldContract{
+				{EnvKey: "PORT", Kind: "int", HasDefault: true, Default: "8080"},
+			},
+			wantLen: 0,
+		},
+		{
+			name: "invalid default is error",
+			contracts: []contract.FieldContract{
+				{EnvKey: "PORT", Kind: "int", HasDefault: true, Default: "abc"},
+			},
+			wantLen: 1,
+		},
+		{
+			name: "valid duration default passes",
+			contracts: []contract.FieldContract{
+				{EnvKey: "TIMEOUT", Kind: "duration", HasDefault: true, Default: "30s"},
+			},
+			wantLen: 0,
+		},
+		{
+			name: "invalid duration default is error",
+			contracts: []contract.FieldContract{
+				{EnvKey: "TIMEOUT", Kind: "duration", HasDefault: true, Default: "soon"},
+			},
+			wantLen: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := checkDefaults(tt.contracts)
+			if len(got) != tt.wantLen {
+				t.Fatalf("expected %d findings, got %d: %+v", tt.wantLen, len(got), got)
+			}
+
+			for _, finding := range got {
+				if finding.Kind != contract.KindInvalidDefault {
+					t.Fatalf("expected KindInvalidDefault, got %s", finding.Kind)
+				}
+
+				if !finding.IsError {
+					t.Fatal("invalid default should be an error")
+				}
 			}
 		})
 	}

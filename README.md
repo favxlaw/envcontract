@@ -118,7 +118,7 @@ GOCACHE=/tmp/envcontract-go-build GOLANGCI_LINT_CACHE=/tmp/envcontract-golangci-
 | 1 | Struct parser and `FieldContract` type | Done |
 | 2 | Source adapters and env loading | Done |
 | 3 | Validation engine | Internal implementation done |
-| 4 | Public API and result type | Pending |
+| 4 | Public API and result type | Done |
 | 5 | CLI | Pending |
 | 6 | `.env.example` generator and schema export | Pending |
 | 7 | Documentation, hardening, and `v0.1.0` | Pending |
