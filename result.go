@@ -30,7 +30,7 @@ type Result struct {
 	sourceWarnings []LoadWarning
 }
 
-func newResult(findings []Finding, sourceWarnings []LoadWarning) Result {
+func NewResult(findings []Finding, sourceWarnings []LoadWarning) Result {
 	return Result{
 		findings:       append([]Finding(nil), findings...),
 		sourceWarnings: append([]LoadWarning(nil), sourceWarnings...),
