@@ -39,7 +39,7 @@ func Validate(v any, opts ...Option) (Result, error) {
 		CheckUnused: cfg.checkUnused,
 	})
 
-	return newResult(findings, loadWarnings), nil
+	return NewResult(findings, loadWarnings), nil
 }
 
 func loadSources(sources []Source) (map[string]string, []LoadWarning, error) {
