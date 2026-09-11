@@ -47,6 +47,8 @@ struct as the source of truth and checks environment data against it.
 - Use an in-memory mock source for tests.
 - Report malformed `.env` lines as warnings.
 - Validate missing variables, type mismatches, and unused variables internally.
+- Export a struct's field contract as portable JSON (`ExportSchema`), and
+  parse it back (`ParseSchema`).
 
 Supported field kinds today:
 
@@ -88,6 +90,26 @@ RATE=3.14
 If `PORT` is missing, the validation engine can report a missing required
 variable. If `PORT=abc`, it can report a type mismatch because `abc` is not an
 integer.
+
+## Schema Export
+
+Go structs only exist as real types inside a compiled Go program, so a
+separate CLI binary has no way to inspect one directly. `ExportSchema` bridges
+that gap: run it once from your own code to snapshot a struct's contract as
+JSON, then anything else (including the upcoming CLI) can read that file
+without needing your struct at all.
+
+```go
+data, err := envcontract.ExportSchema(&Config{})
+if err != nil {
+	return err
+}
+
+os.WriteFile("envcontract.schema.json", data, 0o644)
+```
+
+`ParseSchema` reverses the process, decoding that JSON back into
+`[]envcontract.FieldContract`.
 
 ## Development
 
