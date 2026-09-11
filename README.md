@@ -141,7 +141,7 @@ GOCACHE=/tmp/envcontract-go-build GOLANGCI_LINT_CACHE=/tmp/envcontract-golangci-
 | 2 | Source adapters and env loading | Done |
 | 3 | Validation engine | Internal implementation done |
 | 4 | Public API and result type | Done |
-| 5 | CLI | Pending |
+| 5 | CLI | In progress |
 | 6 | `.env.example` generator and schema export | Pending |
 | 7 | Documentation, hardening, and `v0.1.0` | Pending |
 
@@ -167,18 +167,27 @@ if result.HasErrors() {
 This API is not finished yet. The current codebase is still focused on the
 parser, source adapters, and validation engine.
 
-## Planned CLI
+## CLI
 
-Future CLI commands:
+A CLI is under construction at `cmd/envcontract`. Build it locally with:
+
+```bash
+make build
+./bin/envcontract version
+```
+
+Available today:
+
+```bash
+envcontract version
+```
+
+Planned:
 
 ```bash
 envcontract check
 envcontract init
-envcontract schema
-envcontract version
 ```
-
-The CLI does not exist yet.
 
 ## License
 
