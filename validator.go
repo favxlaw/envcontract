@@ -12,6 +12,18 @@ import (
 type FieldContract = contract.FieldContract
 
 func Validate(v any, opts ...Option) (Result, error) {
+	contracts, err := parser.ParseStruct(v)
+	if err != nil {
+		return Result{}, err
+	}
+
+	return CheckSchema(contracts, opts...)
+}
+
+// CheckSchema runs the same validation Validate does, but against field
+// contracts you already have (for example, from ParseSchema) instead of
+// deriving them from a live struct via reflection.
+func CheckSchema(contracts []FieldContract, opts ...Option) (Result, error) {
 	cfg := defaultConfig()
 
 	for _, opt := range opts {
@@ -23,11 +35,6 @@ func Validate(v any, opts ...Option) (Result, error) {
 
 	if len(cfg.sources) == 0 {
 		cfg.sources = append(cfg.sources, source.SystemSource{})
-	}
-
-	contracts, err := parser.ParseStruct(v)
-	if err != nil {
-		return Result{}, err
 	}
 
 	env, loadWarnings, err := loadSources(cfg.sources)
