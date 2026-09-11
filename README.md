@@ -180,12 +180,20 @@ Available today:
 
 ```bash
 envcontract version
+
+envcontract check -schema envcontract.schema.json -env .env
+envcontract check -schema envcontract.schema.json            # checks the system environment
+envcontract check -schema envcontract.schema.json -env .env -system -unused
 ```
+
+`check` exits `0` when the environment matches the schema, `1` when it finds
+validation errors, and `2` when the CLI itself was misused (e.g. a missing
+`-schema` flag). The schema file is produced by `ExportSchema` - see
+[Schema Export](#schema-export).
 
 Planned:
 
 ```bash
-envcontract check
 envcontract init
 ```
 

@@ -134,6 +134,33 @@ func TestResultJSON(t *testing.T) {
 	}
 }
 
+func TestCheckSchemaMatchesValidate(t *testing.T) {
+	contracts, err := ParseSchema(mustExportSchema(t, &testConfig{}))
+	if err != nil {
+		t.Fatalf("parse schema: %v", err)
+	}
+
+	result, err := CheckSchema(contracts, WithFile("testdata/valid.env"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.HasErrors() {
+		t.Fatalf("expected no errors, got %+v", result.Errors())
+	}
+}
+
+func mustExportSchema(t *testing.T, v any) []byte {
+	t.Helper()
+
+	data, err := ExportSchema(v)
+	if err != nil {
+		t.Fatalf("export schema: %v", err)
+	}
+
+	return data
+}
+
 type mockSource struct {
 	values map[string]string
 }

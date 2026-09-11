@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Host",
+    "env_key": "HOST",
+    "required": false,
+    "has_default": true,
+    "default": "localhost",
+    "kind": "string"
+  },
+  {
+    "name": "Port",
+    "env_key": "PORT",
+    "required": true,
+    "has_default": false,
+    "kind": "int"
+  }
+]
