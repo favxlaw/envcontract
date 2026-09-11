@@ -49,6 +49,8 @@ struct as the source of truth and checks environment data against it.
 - Validate missing variables, type mismatches, and unused variables internally.
 - Export a struct's field contract as portable JSON (`ExportSchema`), and
   parse it back (`ParseSchema`).
+- Generate a `.env.example` scaffold from field contracts (`generator.EnvExample`).
+- CLI commands: `envcontract version`, `envcontract check`, `envcontract init`.
 
 Supported field kinds today:
 
@@ -141,8 +143,8 @@ GOCACHE=/tmp/envcontract-go-build GOLANGCI_LINT_CACHE=/tmp/envcontract-golangci-
 | 2 | Source adapters and env loading | Done |
 | 3 | Validation engine | Internal implementation done |
 | 4 | Public API and result type | Done |
-| 5 | CLI | In progress |
-| 6 | `.env.example` generator and schema export | Pending |
+| 5 | CLI (`check`, `init`, `version`) | Done |
+| 6 | `.env.example` generator and schema export | Done |
 | 7 | Documentation, hardening, and `v0.1.0` | Pending |
 
 ## Planned Public API
@@ -191,11 +193,13 @@ validation errors, and `2` when the CLI itself was misused (e.g. a missing
 `-schema` flag). The schema file is produced by `ExportSchema` - see
 [Schema Export](#schema-export).
 
-Planned:
-
 ```bash
-envcontract init
+envcontract init -schema envcontract.schema.json -out .env.example
 ```
+
+`init` writes a `.env.example` scaffold from the schema: required fields are
+left blank, optional fields keep their default (if any). It refuses to
+overwrite an existing file unless you pass `-force`.
 
 ## License
 
