@@ -24,6 +24,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "check":
 		return cmdCheck(args[1:], stdout, stderr)
+	case "init":
+		return cmdInit(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "envcontract: unknown command %q\n", args[0])
 		return 1
